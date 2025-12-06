@@ -11,24 +11,37 @@ screen = pygame.display.set_mode((1000, 800))
 key = "jAc607-Du0yJUVqdxXNkrP1x8NDxAcb_MOClmwL6Pzw="
 cipher_suite = Fernet(key)
 
-with open('saves/save.enc', 'rb') as enc_file:
-    cipher_text = enc_file.read()
+def load_enc(path, mode, save = None):
+    global cipher_text, save_enc, enc_file
+    if mode == "r":
+        with open(path, 'rb') as enc_file: #mode: "rb"
+            cipher_text = enc_file.read()
 
-json_data_bytes = cipher_suite.decrypt(cipher_text)
-save = json.loads(json_data_bytes.decode('utf-8'))
+        json_data_bytes = cipher_suite.decrypt(cipher_text)
+        data = json.loads(json_data_bytes.decode('utf-8'))
+        return data
 
-# with open('saves/save.json', 'w') as json_file:
-#     json.dump(json_data, json_file, ensure_ascii = False, indent = 4)
+    elif mode == "w":
+        save_enc = json.dumps(save).encode('utf-8')
+        cipher_text = cipher_suite.encrypt(save_enc)
 
-# with open('saves/save.json', 'r') as file:
-#    save = json.load(file)
+        with open(path, 'wb') as enc_file:
+            enc_file.write(cipher_text)
 
-string_level = save['level']
-string_money = save['money']
-string_click = save['click']
-level = int(string_level)
-money = int(string_money)
-click = int(string_click)
+def load_json(path, mode):
+    if mode == 'r':
+        with open(path, 'r') as file:
+            data = json.load(file)
+        return data
+
+def refactor_str():
+    global level, money, click
+    level = int(save['level'])
+    money = int(save['money'])
+    click = int(save['click'])
+
+save = load_enc('saves/save.enc', 'r')
+refactor_str()
 
 icon = pygame.image.load('image/icon.png')
 
@@ -51,7 +64,7 @@ background = pygame.image.load('image/фон.png')
 pygame.display.set_icon(icon)
 pygame.display.set_caption("cow clicker")
 
-prices_cow = [200, 500, 1000, 2000, 5000]
+prices_cow = [200, 500, 1000, 2000, 5000, '']
 
 prices_click = [50, 100,  300,  500, 1000,  3000,  5000,  7000,  10000,  15000] # 1,5; 2; 2,5; 3; 4; 5; 7; 8; 9; 15
 clicks =       [1,    2,    3,    4,    5,     7,     8,     9,     10,     15]
@@ -66,8 +79,10 @@ font_click = font_constructor.render(str(prices_click[click - 1]), False, 'white
 
 info_level = font_info.render("lvl cow = " + str(level), False, 'white')
 info_click = font_info.render("lvl click = " + str(click), False, 'white')
+
 syringe = 0
 secret = 0
+
 def int_level():
     global level, what_level
     if level == 1:
@@ -89,12 +104,21 @@ def int_level():
         what_level = level_1
         level = 1
 
-    if secret == 6:
+    if secret == 6 or level == 6:
         what_level = level_6
         level = 6
 
     if syringe == 2:
         what_level = powerful
+
+def restart_sprite():
+    global font_money, font_cow, info_level, info_click
+    font_money = font_constructor.render(str(money), False, 'white')
+    font_cow = font_constructor.render(str(prices_cow[level - 1]), False, 'white')
+    info_click = font_info.render("lvl click = " + str(click), False, 'white')
+    info_level = font_info.render("lvl cow = " + str(level), False, 'white')
+
+    int_level()
 
 running = True
 int_level()
@@ -114,16 +138,12 @@ def randomizer():
 
 tick = 0
 
-if level == 5:
-    font_cow = font_constructor.render("", False, 'white')
 
-if click == 10:
-    font_click = font_constructor.render("", False, 'white')
 
 while running:
     clock.tick(60)
     tick += 1
-    if tick == 3600 and syringe == 0:
+    if tick == 1800 and syringe == 0:
         randomizer()
         tick = 0
 
@@ -132,6 +152,12 @@ while running:
         tick = 0
         int_level()
         info_click = font_info.render("lvl click = " + str(click), False, 'white')
+
+    if level == 5:
+        font_cow = font_constructor.render("", False, 'white')
+
+    if click == 10:
+        font_click = font_constructor.render("", False, 'white')
 
     screen.blit(background, (0, 0))
     screen.blit(what_level, (0, 0))
@@ -157,7 +183,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-            pygame.quit()
+
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
             if 0 < pos[0] < 300 and pos[1] < 300:
@@ -170,19 +196,21 @@ while running:
                 font_money = font_constructor.render(str(money), False, 'white')
 
             elif 20 < pos[0] < 306 and 440 < pos[1] < 570:
-                if money > prices_cow[level - 1] or money == prices_cow[level - 1]:
-                    if level < 5:
-                        money = money - prices_cow[level - 1]
-                        font_money = font_constructor.render(str(money), False, 'white')
-                        level += 1
-                        font_cow = font_constructor.render(str(prices_cow[level - 1]), False, 'white')
-                        info_level = font_info.render("lvl cow = " + str(level), False, 'white')
-                        int_level()
+                try:
+                    if money >= prices_cow[level - 1] and level != 6:
+                        if level < 5:
+                            money = money - prices_cow[level - 1]
+                            font_money = font_constructor.render(str(money), False, 'white')
+                            level += 1
+                            font_cow = font_constructor.render(str(prices_cow[level - 1]), False, 'white')
+                            info_level = font_info.render("lvl cow = " + str(level), False, 'white')
+                            int_level()
+                except TypeError:
+                    None
 
-                elif level == 5:
+                if level == 5:
                     font_cow = font_constructor.render("", False, 'white')
                     secret += 1
-                    print(secret)
                     int_level()
 
             elif 20 < pos[0] < 316 and 590 < pos[1] < 708:
@@ -206,11 +234,18 @@ while running:
                 int_level()
                 info_click = font_info.render("lvl click = " + str(click) + " x 2!!!", False, 'white')
 
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_F2:
+                save = load_json('saves/save.json', 'r')
+                refactor_str()
+                restart_sprite()
+
 
 
 save['level'] = str(level)
 save['money'] = str(money)
 save['click'] = str(click)
+
 # with open('saves/save.json', 'w') as file:
 #     json.dump(save, file, ensure_ascii = False, indent = 4)
 
@@ -219,3 +254,4 @@ cipher_text = cipher_suite.encrypt(save_enc)
 
 with open('saves/save.enc', 'wb') as enc_file:
     enc_file.write(cipher_text)
+pygame.quit()
