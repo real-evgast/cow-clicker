@@ -6,7 +6,7 @@ ___
 + Also, during the game, a syringe may appear that increases income by 2 times.
 
 ## How to start playing
-1. download [.rar](korova.rar)
+1. Go to [itch.io](https://real-evgast.itch.io/cow-clicker) and download cow-clicker.zip
 2. then unzip all the contents of the archive to any folder
 3. and run the .exe file
     + Antivirus may complain about this file because: unknown publisher. I don't know how to fix it yet. I will fix it in future versions.
@@ -15,9 +15,7 @@ ___
 ## Developers
 coder: evgast :kissing_smiling_eyes:
 
-designer: konvlax :smiley:
-
-tester: Vanya :zzz:
+designer:  Dashona :smiley:
 
 ## Words from the developers
 We are glad that we made a game, even such a game. This is our first game, and we will be glad for any support from your side. 
